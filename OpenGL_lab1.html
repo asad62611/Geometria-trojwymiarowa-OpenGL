@@ -1,157 +1,158 @@
-
 <!DOCTYPE html>
-<html>
-
-<!--
- Use OpenGL and GLUT to draw a simple cube
-  with each face being a different color.  Rotations
-  can be applied with the arrow keys, the page up
-  key, and the page down key.  The home key will set
-  all rotations to 0.  Initial rotations about the
-  x, y, and z axes are 15, -15, and 0.  
-
-  This program is meant as an example of using modeling
-  transforms, with glPushMatrix and glPopMatrix.
- 
-  Note that this program does not use lighting.
--->
-
+<html lang="pl">
 <head>
-<meta charset="UTF-8">
-<title>Unlit Cube Example</title>
-
-<script src="glsim.js"></script>  <!-- load the OpenGL 1.1 simulation code -->
-
+    <meta charset="UTF-8">
+    <title>OpenGL Example</title>
+    <style>
+        canvas { border: 1px solid black; }
+    </style>
+</head>
+<body>
+    <select id="colorOptions" name="colorOptions">
+        <option value="0">Green</option>
+        <option value="1">Blue</option>
+        <option value="2">Brown</option>
+    </select>
+<canvas id="glcanvas" width="600" height="600"></canvas>
+<script src="glsim.js"></script>
 <script>
+"use strict";
 
-    let rotateX = 15;   // rotations of cube about the axes
-    let rotateY = -15;
-    let rotateZ = 0;
-    
-    // ------------------- functions for drawing the cube -------------------
-    
-    function square(r, g, b) {
-        glColor3f(r,g,b);
-        glBegin(GL_TRIANGLE_FAN);
-        glVertex3f(-0.5, -0.5, 0.5);
-        glVertex3f(0.5, -0.5, 0.5);
-        glVertex3f(0.5, 0.5, 0.5);
-        glVertex3f(-0.5, 0.5, 0.5);
+let rotateX = 0;
+let rotateY = 0;
+let rotateZ = 0;
+let objectNumber = 1;
+
+function corkscrew() {
+    let colorSelect = document.getElementById('colorOptions');
+    let numVerticesPerTurn = 20;  
+    let numVertices = 12 * numVerticesPerTurn;
+    let initialRadius = 0.2; 
+    let finalRadius = 1.0;  
+    glLineWidth(3);
+    glBegin(GL_LINE_STRIP);
+    for (let i = 0; i < numVertices; i++) {
+        if(colorSelect.value == 0) glColor3f(0, 1, 0);
+        else if(colorSelect.value == 1) glColor3f(0, 0, 1);
+        else if(colorSelect.value == 2) glColor3f(0.6, 0.3, 0.1);
+        let t = i / (numVertices - 1); 
+        let radius = initialRadius + t * (finalRadius - initialRadius);
+        let angle = 2 * Math.PI * (i % 20) / 20;
+        let x = radius * Math.cos(angle);
+        let y = radius * Math.sin(angle);
+        let z = (2 * i / numVertices) - 1;
+        glVertex3f(x, y, z);
+    }
+    glEnd();
+}
+function cone() {
+    let vertices = [];
+    let numSides = 12;
+    let radius = 1;
+    let height = 1.5;
+
+    for (let i = 0; i < numSides; i++) {
+        let angle = 2 * Math.PI * i / numSides;
+        vertices.push([radius * Math.cos(angle), 0, radius * Math.sin(angle)]);
+    }
+    vertices.push([0, height, 0]);
+
+
+
+    for (let i = 0; i < numSides; i++) {
+        if(i<6){
+            glColor3f(i, i%2, i%3);
+        }
+        else{
+            glColor3f(i%2, i%3, i)
+        }
+        glBegin(GL_TRIANGLES);
+        glVertex3f(vertices[i][0], vertices[i][1], vertices[i][2]);
+        glVertex3f(vertices[(i + 1) % numSides][0], vertices[(i + 1) % numSides][1], vertices[(i + 1) % numSides][2]);
+        glVertex3f(vertices[numSides][0], vertices[numSides][1], vertices[numSides][2]);
         glEnd();
     }
-    
-    function cube(size) {  // draws a cube with side length = size
-    
-        glPushMatrix();
-        glScalef(size,size,size); // scale unit cube to desired size
-        
-        square(1, 0, 0); // red front face
-        
-        glPushMatrix();
-        glRotatef(90, 0, 1, 0);
-        square(0, 1, 0); // green right face
-        glPopMatrix();
-        
-        glPushMatrix();
-        glRotatef(-90, 1, 0, 0);
-        square(0, 0, 1); // blue top face
-        glPopMatrix();
-        
-        glPushMatrix();
-        glRotatef(180, 0, 1, 0);
-        square(0, 1, 1); // cyan back face
-        glPopMatrix();
-        
-        glPushMatrix();
-        glRotatef(-90, 0, 1, 0);
-        square(1, 0, 1); // magenta left face
-        glPopMatrix();
-        
-        glPushMatrix();
-        glRotatef(90, 1, 0, 0);
-        square(1, 1, 0); // yellow bottom face
-        glPopMatrix();
-        
-        glPopMatrix(); // Restore matrix to its state before cube() was called.
-    
-    }
-    
-    // ----------------------------------------------------------------------
 
-    function display() {  // Draws the image.
+    glColor3f(0, 0.5, 0.5);
+    glBegin(GL_POLYGON);
+    for (let i = 0; i < numSides; i++) {
+        glVertex3f(vertices[i][0], vertices[i][1], vertices[i][2]);
+    }
+    glEnd();
+}
 
-        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-                
-        glLoadIdentity();             // Set up modelview transform. 
-        glRotatef(rotateZ,0,0,1);
-        glRotatef(rotateY,0,1,0);
-        glRotatef(rotateX,1,0,0);
-        
-        cube(1);
-        
+function display() {
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glLoadIdentity();
+    glRotatef(rotateX, 1, 0, 0);
+    glRotatef(rotateY, 0, 1, 0);
+    glRotatef(rotateZ, 0, 0, 1);
+
+    if (objectNumber === 1) {
+        corkscrew();
+    } else if (objectNumber === 2) {
+        cone();
     }
-    
-    function initGL() {
-        glMatrixMode(GL_PROJECTION);
-        glOrtho(-1, 1, -1, 1, -1, 1);
-        glMatrixMode(GL_MODELVIEW);
-        glEnable(GL_DEPTH_TEST);
-        glClearColor(0, 0, 0, 1);
+
+    glFlush();
+}
+
+function initGL() {
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(-2, 2, -2, 2, -2, 2);
+    glMatrixMode(GL_MODELVIEW);
+    glEnable(GL_DEPTH_TEST);
+    glClearColor(0, 0, 0, 1);
+}
+
+function doKeyDown(evt) {
+    let key = evt.keyCode;
+    if (key === 37) { // left
+        rotateY -= 15;
+    } else if (key === 39) { // right
+        rotateY += 15;
+    } else if (key === 38) { // up
+        rotateX -= 15;
+    } else if (key === 40) { // down
+        rotateX += 15;
+    } else if (key === 33) { // page up
+        rotateZ += 15;
+    } else if (key === 34) { // page down
+        rotateZ -= 15;
+    } else if (key === 49) { // '1'
+        objectNumber = 1;
+    } else if (key === 50) { // '2'
+        objectNumber = 2;
+    } else if (key === 36) { // home
+        rotateX = rotateY = rotateZ = 0;
     }
-    
-    function doKeyDown(evt) {
-        let key = evt.keyCode;
-        if ( key == 37 ) // left
-           rotateY -= 15;
-        else if ( key == 39 ) // right
-           rotateY += 15;
-        else if ( key == 40) // down
-           rotateX += 15;
-        else if ( key == 38 ) // up
-           rotateX -= 15;
-        else if ( key == 33 ) // page up
-           rotateZ += 15;
-        else if ( key == 34 ) // page down
-           rotateZ -= 15;
-        else if ( key == 36 )  // home
-           rotateX = rotateY = rotateZ = 0;
-        if (key >=34 && key <= 40) {
-            evt.preventDefault();
-        }
-        display();
+    if (key >= 33 && key <= 40) {
+        evt.preventDefault();
     }
-    
-    function init() {  // Called by <body onload="init()">, when the page has loaded.
-        try {
-            glsimUse("glcanvas"); // OpenGL will draw to the canvas with id="glcanvas".
-        }
-        catch (e) {
-            document.getElementById("canvas-holder").innerHTML =
-                "Sorry, an error occured:<br>" + e;
-            return;
-        }
-        document.onkeydown = doKeyDown;
-        initGL();
-        display();
+    display();
+}
+
+function init() {
+    try {
+        glsimUse("glcanvas");
+    } catch (e) {
+        document.getElementById("canvas-holder").innerHTML = "Sorry, an error occurred:<br>" + e;
+        return;
     }
+    document.onkeydown = doKeyDown;
+    initGL();
+    display();
+}
 
 </script>
-
 </head>
-
 <body onload="init()">
-
-<h3>A Simple Unlit Cube in OpenGL 1.1</h3>
-
-<p>(Rotate using arrow keys, page up, page down, and home keys.)</p>
-
+<p>(Rotate using arrow keys, page up, page down, home keys, and switch objects with '1' and '2')</p>
 <noscript>
 <p><b>Sorry, this page requires JavaScript!</b></p>
 </noscript>
-
 <div id="canvas-holder">
-<canvas id="glcanvas" width="500" height="500"></canvas>
 </div>
-
 </body>
 </html>
